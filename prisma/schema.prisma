@@ -1,0 +1,98 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  // binaryTargets = ["native", "linux-musl"]
+} 
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  events    Event[]
+  answers   Answer[] // Relation to answers
+  mood      Mood[] // Relation to answers
+}
+
+model Category {
+  id             Int             @id @default(autoincrement())
+  name           String          @unique
+  questionnaires Questionnaire[]
+  Event          Event[]
+}
+
+// Define the Event model
+model Event {
+  id            Int      @id @default(autoincrement())
+  name          String
+  eventType     String
+  eventCategory Int
+  category      Category @relation(fields: [eventCategory], references: [id])
+  description   String
+  dateTime      DateTime
+  user          User     @relation(fields: [userId], references: [id])
+  userId        Int // Foreign key for linking to User
+  mood          String?
+}
+
+model Questionnaire {
+  id          Int        @id @default(autoincrement())
+  title       String     @unique
+  description String?
+  categoryId  Int
+  category    Category   @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime   @default(now())
+  createdBy   Int
+  questions   Question[]
+}
+
+model Question {
+  id              Int           @id @default(autoincrement())
+  questionText    String
+  questionType    String
+  questionnaireId Int
+  questionnaire   Questionnaire @relation(fields: [questionnaireId], references: [id])
+  createdAt       DateTime      @default(now())
+  image           String
+  answers         Answer[] // Relation to answers
+}
+
+model Answer {
+  id         Int      @id @default(autoincrement())
+  answerText String
+  createdAt  DateTime @default(now())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id])
+}
+
+model Mood {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  state     String
+  color     String
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Community {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  groupLink   String
+  title       String
+  imageUrl    String
+  socialMedia String
+}

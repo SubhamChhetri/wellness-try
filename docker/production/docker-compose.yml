@@ -1,0 +1,51 @@
+services:
+
+  postgres:
+    container_name: mindfulness-pg
+    image: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: mindfulness_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U mindfulness_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - my_network
+
+  mindfulness-production:
+    build:
+      context: ../../
+      dockerfile: docker/production/Dockerfile
+    image: mindfulness-prod
+    ports:
+      - "3003:3000"
+    env_file:
+      - .env.production
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health', (res) => res.statusCode === 200 ? process.exit(0) : process.exit(1))" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - my_network
+
+volumes:
+  postgres_data:
+
+
+networks:
+  my_network:
+    name: my_network
+    driver: bridge
